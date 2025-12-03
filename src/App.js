@@ -27,7 +27,7 @@ const WellnessApp = () => {
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem('savedTips');
+    const stored = window.storage ? null : localStorage.getItem('savedTips');
     if (stored) {
       setSavedTips(JSON.parse(stored));
     }
@@ -134,7 +134,9 @@ Make steps specific and actionable.`
       newSaved = [...savedTips, tip];
     }
     setSavedTips(newSaved);
-    localStorage.setItem('savedTips', JSON.stringify(newSaved));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('savedTips', JSON.stringify(newSaved));
+    }
   };
 
   const isSaved = (tip) => savedTips.some(t => t.title === tip.title);
@@ -157,10 +159,37 @@ Make steps specific and actionable.`
               <input
                 type="number"
                 value={profile.age}
-                onChange={(e) => setProfile({ ...profile, age: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter your age"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Always update to allow typing
+                  setProfile({ ...profile, age: value });
+                }}
+                onBlur={(e) => {
+                  // On blur, ensure valid number or clear
+                  const age = parseInt(e.target.value);
+                  if (isNaN(age) || age < 1 || age > 100) {
+                    setProfile({ ...profile, age: '' });
+                  }
+                }}
+                min="1"
+                max="100"
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                  profile.age && (parseInt(profile.age) < 1 || parseInt(profile.age) > 100 || isNaN(parseInt(profile.age)))
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-300'
+                }`}
+                placeholder="Enter your age (1-100)"
               />
+              {profile.age && (parseInt(profile.age) < 1 || parseInt(profile.age) > 100 || isNaN(parseInt(profile.age))) && (
+                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                  <span className="text-red-500">⚠</span>
+                  {isNaN(parseInt(profile.age)) 
+                    ? 'Please enter a valid number' 
+                    : parseInt(profile.age) < 1 
+                    ? 'Age must be at least 1' 
+                    : 'Age cannot exceed 100'}
+                </p>
+              )}
             </div>
 
             <div>
